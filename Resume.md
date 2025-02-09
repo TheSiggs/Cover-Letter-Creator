@@ -157,4 +157,3 @@ developing cutting-edge solutions to stay ahead in a rapidly evolving industry.
 #### Observability and Monitoring
 - Elastic
 - New Relic
-
