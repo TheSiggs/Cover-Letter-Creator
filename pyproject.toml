@@ -4,14 +4,23 @@ version = "0.1.0"
 description = ""
 package-mode = false
 authors = [
-    {name = "Sam Siggs",email = "sam.siggs@gmail.com"}
+    {name = "Sam Siggs", email = "sam.siggs@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
+    "langchain==0.3.7",
+    "langchain-community==0.3.7",
+    "langchain-core (>=0.3.34,<0.4.0)",
+    "tiktoken==0.8.0",
+    "chromadb==0.5.20",
+    "onnxruntime==1.20.0",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "openai (>=1.61.1,<2.0.0)",
+    "langchain-openai (>=0.3.4,<0.4.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
