@@ -26,7 +26,6 @@
               poetry install
             fi
             source .venv/bin/activate
-            exec zsh
           '';
         };
       });
