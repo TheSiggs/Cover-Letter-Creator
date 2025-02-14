@@ -77,19 +77,27 @@ app = Flask(__name__)
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    if 'resume' not in request.form or 'url' not in request.form:
-        return 'Missing resume or url', 400
+    try:
+        if 'resume' not in request.form or 'url' not in request.form:
+            return 'Missing resume or url', 400
 
-    resume = request.form['resume']
-    seek_url = request.form['url']
+        resume = request.form['resume']
+        seek_url = request.form['url']
 
-    job_description = fetch_job_description(seek_url)
+        job_description = fetch_job_description(seek_url)
 
-    if job_description is None:
-        return 'Could not fetch job decription from Seek', 500
+        if job_description is None:
+            return 'Could not fetch job decription from Seek', 500
 
-    cover_letter = generate_coverletter(resume, job_description)
-    return cover_letter, 200
+        cover_letter = generate_coverletter(resume, job_description)
+        return cover_letter, 200
+    except Exception:
+        return "Something went wrong", 500
+
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "", 200
 
 
 if __name__ == '__main__':
