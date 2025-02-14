@@ -51,6 +51,7 @@ def generate_coverletter(resume, job_description):
         texts=doc_splits,
         collection_name="rag-chroma",
         embedding=OpenAIEmbeddings(),
+        persist_directory=None
     )
     retriever = vectorstore.as_retriever()
 
