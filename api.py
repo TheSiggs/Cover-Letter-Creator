@@ -91,7 +91,8 @@ def submit():
 
         cover_letter = generate_coverletter(resume, job_description)
         return cover_letter, 200
-    except Exception:
+    except Exception as e:
+        print(e)
         return "Something went wrong", 500
 
 
