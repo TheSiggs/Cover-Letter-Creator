@@ -75,6 +75,24 @@ def generate_coverletter(resume, job_description):
 app = Flask(__name__)
 
 
+@app.route('/namejeff', methods=['POST'])
+def submit():
+    try:
+        jeff = request.form['jeff']
+
+        model_local = ChatOpenAI(model_name="gpt-4")
+        after_rag_template = "Just say 'Jeff'"
+        after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
+        after_rag_chain = (
+            {"job_description": RunnablePassthrough()} | after_rag_prompt | model_local | StrOutputParser()
+        )
+        cover_letter = after_rag_chain.invoke(jeff)
+        return cover_letter, 200
+    except Exception as e:
+        print(e)
+        return "Something went wrong", 500
+
+
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
