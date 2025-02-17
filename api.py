@@ -8,9 +8,12 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request
+import logging
 
 
 load_dotenv()
+
+logging.basicConfig(level=logging.ERROR)
 
 
 def fetch_job_description(url):
@@ -89,7 +92,7 @@ def namejeff():
         cover_letter = after_rag_chain.invoke(jeff)
         return cover_letter, 200
     except Exception as e:
-        print(e)
+        logging.error(f"Error occured {e}")
         return "Something went wrong", 500
 
 
@@ -110,7 +113,7 @@ def submit():
         cover_letter = generate_coverletter(resume, job_description)
         return cover_letter, 200
     except Exception as e:
-        print(e)
+        logging.error(f"Error occured {e}")
         return "Something went wrong", 500
 
 
