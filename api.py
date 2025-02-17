@@ -45,33 +45,49 @@ def fetch_job_description(url):
 
 def generate_coverletter(resume, job_description):
     model_local = ChatOpenAI(model_name="gpt-4")
+
+    # Define text splitter
     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=7500, chunk_overlap=100
     )
-    doc_splits = text_splitter.split_text(resume)
 
-    vectorstore = Chroma.from_texts(
-        texts=doc_splits,
-        collection_name="rag-chroma",
+    # Split and store resume
+    resume_splits = text_splitter.split_text(resume)
+    resume_vectorstore = Chroma.from_texts(
+        texts=resume_splits,
+        collection_name="resume-chroma",
         embedding=OpenAIEmbeddings(),
         persist_directory=None
     )
-    retriever = vectorstore.as_retriever()
+    resume_retriever = resume_vectorstore.as_retriever()
 
+    # Split and store job description
+    job_splits = text_splitter.split_text(job_description)
+    job_vectorstore = Chroma.from_texts(
+        texts=job_splits,
+        collection_name="job-chroma",
+        embedding=OpenAIEmbeddings(),
+        persist_directory=None
+    )
+    job_retriever = job_vectorstore.as_retriever()
+
+    # Cover letter prompt
     after_rag_template = """
     Cover Letter Creator focuses on generating the main content of the cover letter without any headings or personal contact information.
     It directly crafts a narrative that highlights the user's skills and experiences relevant to the job description, maintaining a formal tone throughout.
     The GPT is designed to start the cover letter with an introduction relevant to the job role and company,
     and if any additional information is needed for accuracy, it will request it from the user.
-    Do not hallucinate or make up things that aren't in my Resume
+    Do not hallucinate or make up things that aren't in my Resume.
     Resume: {resume}
     Job Description: {job_description}
+
+    When you reieve the Trigger "Go" you will generate the cover letter
+    Trigger: {trigger}
     """
     after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
-    after_rag_chain = (
-        {"resume": retriever, "job_description": RunnablePassthrough()} | after_rag_prompt | model_local | StrOutputParser()
-    )
-    cover_letter = after_rag_chain.invoke(job_description)
+    after_rag_chain = ({"resume": resume_retriever, "job_description": job_retriever, "trigger": RunnablePassthrough()} | after_rag_prompt | model_local | StrOutputParser())
+
+    cover_letter = after_rag_chain.invoke("Go")
     return cover_letter
 
 
