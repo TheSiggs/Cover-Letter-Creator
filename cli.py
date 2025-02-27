@@ -9,11 +9,12 @@ import requests
 from bs4 import BeautifulSoup
 from docx import Document
 import argparse
+from urllib.parse import urlparse
 
 load_dotenv()
 
 
-def fetch_job_description(url):
+def fetch_job_description_seek(url):
     response = requests.get(url)
     if response.status_code == 200:
         html_content = response.text
@@ -38,6 +39,37 @@ def fetch_job_description(url):
     else:
         print(f"Failed to fetch the URL. Status code: {response.status_code}")
         return None
+
+
+def fetch_job_description_lever(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        html_content = response.text
+
+        # Parse the HTML content
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # Find the script tag with the specific attribute
+        content = soup.find("div", {"class": "content"})
+        content = str(content)
+        if content:
+            return content
+        return None
+    else:
+        print(f"Failed to fetch the URL. Status code: {response.status_code}")
+        return None
+
+
+def fetch_job_description(url):
+    parsed_url = urlparse(url)
+    match parsed_url.netloc:
+        case 'jobs.lever.co':
+            return fetch_job_description_lever(url)
+        case 'www.seek.co.nz':
+            return fetch_job_description_seek(url)
+        case _:
+            print(f"{parsed_url.netloc} Not supported")
+            exit()
 
 
 def generate_coverletter(resume, job_description):
