@@ -60,6 +60,25 @@ def fetch_job_description_lever(url):
         return None
 
 
+def fetch_job_description_working_nomads(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        html_content = response.text
+
+        # Parse the HTML content
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # Find the script tag with the specific attribute
+        content = soup.find("div", {"class": "job"})
+        content = str(content)
+        if content:
+            return content
+        return None
+    else:
+        print(f"Failed to fetch the URL. Status code: {response.status_code}")
+        return None
+
+
 def fetch_job_description(url):
     parsed_url = urlparse(url)
     match parsed_url.netloc:
@@ -67,6 +86,8 @@ def fetch_job_description(url):
             return fetch_job_description_lever(url)
         case 'www.seek.co.nz':
             return fetch_job_description_seek(url)
+        case 'www.workingnomads.com':
+            return fetch_job_description_working_nomads(url)
         case _:
             print(f"{parsed_url.netloc} Not supported")
             exit()

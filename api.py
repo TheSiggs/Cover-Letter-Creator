@@ -1,3 +1,4 @@
+import os
 from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -94,8 +95,30 @@ def generate_coverletter(resume, job_description):
 app = Flask(__name__)
 
 
+def check_auth():
+    """Check if Authorization header is valid"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return False, "Missing Authorization header"
+
+    # Expecting format: "Bearer <token>"
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return False, "Invalid Authorization header format"
+
+    token = parts[1]
+    if token != os.getenv("MASTER_KEY"):
+        return False, "Invalid token"
+
+    return True, "Authorized"
+
+
 @app.route('/namejeff', methods=['POST'])
 def namejeff():
+    is_authorized, message = check_auth()
+    if not is_authorized:
+        return message, 401
+
     try:
         jeff = request.form['jeff']
 
@@ -114,6 +137,9 @@ def namejeff():
 
 @app.route('/submit', methods=['POST'])
 def submit():
+    is_authorized, message = check_auth()
+    if not is_authorized:
+        return message, 401
     try:
         if 'resume' not in request.form or 'url' not in request.form:
             return 'Missing resume or url', 400
@@ -135,6 +161,9 @@ def submit():
 
 @app.route('/ping', methods=['GET'])
 def ping():
+    is_authorized, message = check_auth()
+    if not is_authorized:
+        return message, 401
     return "", 200
 
 
