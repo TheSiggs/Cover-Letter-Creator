@@ -1,45 +1,17 @@
-name: Deploy Python App to VPS
-
+name: Fly Deploy
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
+    name: Deploy app
     runs-on: ubuntu-latest
-
+    concurrency: deploy-group 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Build Docker Image
-      run: |
-        docker build -t my-python-app .
-
-    - name: Save Docker Image
-      run: |
-        docker save my-python-app | gzip > my-python-app.tar.gz
-
-    - name: Copy Image to VPS
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        key: ${{ secrets.VPS_SSH_KEY }}
-        source: "my-python-app.tar.gz"
-        target: "/home/${{ secrets.VPS_USER }}/"
-
-    - name: Deploy on VPS
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        key: ${{ secrets.VPS_SSH_KEY }}
-        script: |
-          docker stop my-python-app || true
-          docker rm my-python-app || true
-          docker load < /home/${{ secrets.VPS_USER }}/my-python-app.tar.gz
-          docker run -d --restart unless-stopped --name my-python-app -p 80:8000 -e OPENAI_API_KEY=${{ secrets.OPEN_API_KEY }} my-python-app
-          rm /home/${{ secrets.VPS_USER }}/my-python-app.tar.gz
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
