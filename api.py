@@ -8,17 +8,68 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request
+from flask import Flask, request, render_template
+from markupsafe import escape
 import logging
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+from playwright.sync_api import sync_playwright
 
 
 load_dotenv()
 
 logging.basicConfig(level=logging.ERROR)
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY')
+csrf = CSRFProtect(app)
+
+
+def fetch_job_description_pw(url):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Go to a JavaScript-heavy page
+        page.goto(url)
+
+        # Wait for content or JS rendering
+        page.wait_for_timeout(2000)  # 2 seconds wait
+
+        # Print HTML
+        html_content = page.content()
+
+        # Parse the HTML content
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # Find the script tag with the specific attribute
+        script_tag = soup.find("script", {"data-automation": "server-state"})
+
+        # Extract and process the content of the script tag
+        if script_tag and script_tag.string:
+            script_content = script_tag.string
+
+            # Find the line containing `window.SEEK_APOLLO_DATA`
+            for line in script_content.splitlines():
+                if "window.SEEK_APOLLO_DATA" in line:
+                    return line.split("window.SEEK_APOLLO_DATA = ")[1]
+        else:
+            print("No <script> tag with data-automation='server-state' or content found.")
+            return None
+
+        browser.close()
 
 
 def fetch_job_description(url):
-    response = requests.get(url)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+    }
+    response = requests.get(url, headers=headers)
     if response.status_code == 200:
         html_content = response.text
 
@@ -92,9 +143,6 @@ def generate_coverletter(resume, job_description):
     return cover_letter
 
 
-app = Flask(__name__)
-
-
 def check_auth():
     """Check if Authorization header is valid"""
     auth_header = request.headers.get("Authorization")
@@ -113,29 +161,8 @@ def check_auth():
     return True, "Authorized"
 
 
-@app.route('/namejeff', methods=['POST'])
-def namejeff():
-    is_authorized, message = check_auth()
-    if not is_authorized:
-        return message, 401
-
-    try:
-        jeff = request.form['jeff']
-
-        model_local = ChatOpenAI(model_name="gpt-4")
-        after_rag_template = "Just say 'Jeff'"
-        after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
-        after_rag_chain = (
-            {"job_description": RunnablePassthrough()} | after_rag_prompt | model_local | StrOutputParser()
-        )
-        cover_letter = after_rag_chain.invoke(jeff)
-        return cover_letter, 200
-    except Exception as e:
-        logging.error(f"Error occured {e}")
-        return "Something went wrong", 500
-
-
 @app.route('/submit', methods=['POST'])
+@csrf.exempt
 def submit():
     is_authorized, message = check_auth()
     if not is_authorized:
@@ -165,6 +192,30 @@ def ping():
     if not is_authorized:
         return message, 401
     return "", 200
+
+
+@app.route("/")
+def index():
+    csrf_token = generate_csrf()
+    return render_template("index.html", csrf_token=csrf_token)
+
+
+@app.route("/coverletter", methods=['POST'])
+def coverletter():
+    website = escape(request.form['website'])
+    name = escape(request.form['name'])
+    summary = escape(request.form['summary'])
+    skills = escape(request.form['skills'])
+    experience = escape(request.form['experience'])
+
+    resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}"
+    job_description = fetch_job_description_pw(website)
+
+    if job_description is None:
+        return render_template("coverletter.html", coverletter='Could not fetch job decription from Seek')
+
+    cover_letter = generate_coverletter(resume, job_description)
+    return render_template("coverletter.html", coverletter=cover_letter)
 
 
 if __name__ == '__main__':

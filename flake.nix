@@ -9,15 +9,20 @@
       let
         pkgs = import nixpkgs { inherit system; };
         python = pkgs.python312;
+        pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+          playwright
+        ]);
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             python
             pkgs.poetry
+            pkgs.nodejs
             pkgs.gcc
             pkgs.libffi
             pkgs.cmake
+            pkgs.playwright-driver.browsers
           ];
           shellHook = ''
             echo "Activating Poetry environment..."
