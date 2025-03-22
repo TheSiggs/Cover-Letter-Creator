@@ -209,7 +209,7 @@ def coverletter():
     experience = escape(request.form['experience'])
 
     resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}"
-    job_description = fetch_job_description_pw(website)
+    job_description = fetch_job_description(website)
 
     if job_description is None:
         return render_template("coverletter.html", coverletter='Could not fetch job decription from Seek')
