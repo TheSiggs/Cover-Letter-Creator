@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    container_name: playwright_api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Uncomment if you want to persist playwright browser downloads
+    # volumes:
+    #   - ./playwright-cache:/root/.cache/ms-playwright
+    stdin_open: true
+    tty: true
+

@@ -13,6 +13,7 @@ from markupsafe import escape
 import logging
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from playwright.sync_api import sync_playwright
+from playwright_stealth import stealth_sync
 
 
 load_dotenv()
@@ -26,22 +27,26 @@ csrf = CSRFProtect(app)
 def fetch_job_description_pw(url):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        page = context.new_page()
+        stealth_sync(page)
 
         # Go to a JavaScript-heavy page
         page.goto(url)
 
         # Wait for content or JS rendering
-        page.wait_for_timeout(2000)  # 2 seconds wait
+        # page.wait_for_timeout(2000)  # 2 seconds wait
 
         # Print HTML
         html_content = page.content()
+        print(html_content)
 
         # Parse the HTML content
         soup = BeautifulSoup(html_content, "html.parser")
 
         # Find the script tag with the specific attribute
         script_tag = soup.find("script", {"data-automation": "server-state"})
+        print(script_tag)
 
         # Extract and process the content of the script tag
         if script_tag and script_tag.string:
@@ -209,10 +214,10 @@ def coverletter():
     experience = escape(request.form['experience'])
 
     resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}"
-    job_description = fetch_job_description(website)
+    job_description = fetch_job_description_pw(website)
 
     if job_description is None:
-        return render_template("coverletter.html", coverletter='Could not fetch job decription from Seek')
+        return render_template("coverletter.html", coverletter='Could not fetch job decription from Seek Jeff')
 
     cover_letter = generate_coverletter(resume, job_description)
     return render_template("coverletter.html", coverletter=cover_letter)
