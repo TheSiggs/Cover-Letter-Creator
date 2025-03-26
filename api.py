@@ -1,4 +1,5 @@
 import os
+import json
 from langchain_community.vectorstores import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -214,7 +215,21 @@ def coverletter():
     experience = escape(request.form['experience'])
     education = escape(request.form['education'])
 
-    resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}\n\nEducation:\n{education}"
+    resume_json = {}
+
+    if name:
+        resume_json['name'] = name
+    if summary:
+        resume_json['summary'] = summary
+    if skills:
+        resume_json['skills'] = skills
+    if experience:
+        resume_json['experience'] = experience
+    if education:
+        resume_json['education'] = education
+
+    resume = json.dumps(resume_json)
+
     job_description = fetch_job_description_pw(website)
 
     if job_description is None:
