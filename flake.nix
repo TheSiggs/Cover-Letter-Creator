@@ -22,6 +22,7 @@
             pkgs.gcc
             pkgs.libffi
             pkgs.cmake
+            pkgs.flyctl
             pkgs.playwright-driver.browsers
           ];
           shellHook = ''

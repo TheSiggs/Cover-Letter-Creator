@@ -212,8 +212,9 @@ def coverletter():
     summary = escape(request.form['summary'])
     skills = escape(request.form['skills'])
     experience = escape(request.form['experience'])
+    education = escape(request.form['education'])
 
-    resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}"
+    resume = f"Name: {name}\n\nSummary:\n{summary}\n\nExperience:\n{experience}\n\nSkills:\n{skills}\n\nEducation:\n{education}"
     job_description = fetch_job_description_pw(website)
 
     if job_description is None:
